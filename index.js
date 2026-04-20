@@ -2,33 +2,28 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
+// Remplis ici l'ID de ton jeu "DONATE REROLL" (on le voit dans l'URL de ton image)
+// C'est l'ID qui est juste après /creations/ dans ton navigateur
+const UNIVERS_ID = "17351604085"; 
+
 app.get('/inventory/:userId', async (req, res) => {
     try {
-        const userId = req.params.userId;
-        // On teste l'API COLLECTIBLES qui est souvent plus tolérante
-        const url = `https://inventory.roblox.com/v1/users/${userId}/assets/collectibles?assetType=GamePass&limit=100&sortOrder=Asc`;
+        // Cette API récupère les pass attachés au JEU directement
+        // C'est la méthode la plus fiable à 100%
+        const url = `https://games.roblox.com/v1/games/${UNIVERS_ID}/game-passes`;
         
-        console.log("Tentative Collectibles pour : " + userId);
-        
+        console.log("Récupération des pass pour le jeu...");
         const response = await axios.get(url);
         
         res.set('Access-Control-Allow-Origin', '*');
-        res.status(200).json(response.data);
+        
+        // On renvoie les données au format attendu par ton script Roblox
+        res.json(response.data);
     } catch (error) {
-        // SI CA ECHOUE, ON TENTE UNE AUTRE API DANS LE CATCH (Plan B)
-        try {
-            const userId = req.params.userId;
-            const urlPlanB = `https://www.roblox.com/users/inventory/list-json?assetTypeId=34&itemsPerPage=100&userId=${userId}`;
-            console.log("Plan B pour : " + userId);
-            const respB = await axios.get(urlPlanB);
-            res.set('Access-Control-Allow-Origin', '*');
-            return res.status(200).json({data: respB.data.Data.Items.map(i => ({id: i.Item.AssetId}))});
-        } catch (err2) {
-            console.error("Échec total :", err2.message);
-            res.status(500).json({ error: true, message: "Aucun pass trouvé" });
-        }
+        console.error("Erreur Roblox :", error.message);
+        res.status(500).json({ error: true, message: error.message });
     }
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Proxy Ultime en ligne"));
+app.listen(PORT, () => console.log("Proxy GamePass Opérationnel"));
