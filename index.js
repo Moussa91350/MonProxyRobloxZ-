@@ -1,27 +1,29 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-app.get('/:api/*', async (req, res) => {
+// On capture tout sans distinction
+app.get('/:subdomain/*', async (req, res) => {
     try {
-        const apiType = req.params.api; 
-        const fullPath = req.params[0];
+        const subdomain = req.params.subdomain; // ex: inventory
+        const path = req.params[0];           // ex: v1/users/...
         const query = req.url.includes('?') ? '?' + req.url.split('?')[1] : '';
         
-        const targetUrl = `https://${apiType}.roblox.com/${fullPath}${query}`;
+        const targetUrl = `https://${subdomain}.roblox.com/${path}${query}`;
+        
         console.log("Appel vers : " + targetUrl);
 
         const response = await axios.get(targetUrl);
         res.set('Access-Control-Allow-Origin', '*');
         res.json(response.data);
     } catch (error) {
-        console.error("Erreur proxy : " + error.message);
+        console.error("Erreur : " + error.message);
         res.status(error.response?.status || 500).json({
-            error: true,
-            message: error.message
+            message: error.message,
+            urlTentée: `https://${req.params.subdomain}.roblox.com/${req.params[0]}`
         });
     }
 });
 
-app.listen(PORT, () => console.log(`Proxy prêt sur le port ${PORT}`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Proxy en ligne sur le port ${PORT}`));
