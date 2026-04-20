@@ -2,29 +2,22 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
-app.get('*', async (req, res) => {
+app.get('/inventory/:userId', async (req, res) => {
     try {
-        // On prend l'URL après le domaine et on la colle derrière roblox.com
-        // Exemple : /inventory/v1/... devient https://inventory.roblox.com/v1/...
-        const parts = req.url.split('/');
-        const apiName = parts[1]; // "inventory"
-        const remainingPath = req.url.replace('/' + apiName, ''); // "/v1/users/..."
-        
-        const targetUrl = `https://${apiName}.roblox.com${remainingPath}`;
-        
-        console.log("Tentative vers : " + targetUrl);
+        const userId = req.params.userId;
+        // URL ultra-directe pour les Game Passes
+        const targetUrl = `https://games.roblox.com/v1/games/17351604085/game-passes`; 
+        // ATTENTION : Si tu veux les pass d'un JOUEUR précis et pas d'un JEU, utilise celle-ci :
+        const userUrl = `https://inventory.roblox.com/v1/users/${userId}/inventory/game-pass?limit=100&sortOrder=Asc`;
 
-        const response = await axios.get(targetUrl);
+        console.log("Appel vers Roblox...");
+        const response = await axios.get(userUrl);
+        
         res.set('Access-Control-Allow-Origin', '*');
         res.json(response.data);
     } catch (error) {
-        console.error("Erreur Roblox : " + error.message);
-        res.status(error.response?.status || 500).json({
-            error: true,
-            message: error.message
-        });
+        res.status(500).json({ error: true, message: error.message });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Proxy Universel prêt !"));
+app.listen(process.env.PORT || 3000);
