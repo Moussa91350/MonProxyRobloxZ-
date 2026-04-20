@@ -2,28 +2,29 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 
-// On capture tout sans distinction
-app.get('/:subdomain/*', async (req, res) => {
+app.get('*', async (req, res) => {
     try {
-        const subdomain = req.params.subdomain; // ex: inventory
-        const path = req.params[0];           // ex: v1/users/...
-        const query = req.url.includes('?') ? '?' + req.url.split('?')[1] : '';
+        // On prend l'URL après le domaine et on la colle derrière roblox.com
+        // Exemple : /inventory/v1/... devient https://inventory.roblox.com/v1/...
+        const parts = req.url.split('/');
+        const apiName = parts[1]; // "inventory"
+        const remainingPath = req.url.replace('/' + apiName, ''); // "/v1/users/..."
         
-        const targetUrl = `https://${subdomain}.roblox.com/${path}${query}`;
+        const targetUrl = `https://${apiName}.roblox.com${remainingPath}`;
         
-        console.log("Appel vers : " + targetUrl);
+        console.log("Tentative vers : " + targetUrl);
 
         const response = await axios.get(targetUrl);
         res.set('Access-Control-Allow-Origin', '*');
         res.json(response.data);
     } catch (error) {
-        console.error("Erreur : " + error.message);
+        console.error("Erreur Roblox : " + error.message);
         res.status(error.response?.status || 500).json({
-            message: error.message,
-            urlTentée: `https://${req.params.subdomain}.roblox.com/${req.params[0]}`
+            error: true,
+            message: error.message
         });
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Proxy en ligne sur le port ${PORT}`));
+app.listen(PORT, () => console.log("Proxy Universel prêt !"));
